@@ -1,7 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
+/* == LEDS == */
+/* Program to disable the microphone and speaker LED on a Lenovo Thinkpad T480 */
+/* Maybe will work on ther models too, but I didn't test it */
+
+// Paths to the LED files
+// Change this if you have a different model
 const char *micmute_path = "/sys/class/leds/platform::micmute/brightness";
 const char *mute_path = "/sys/class/leds/platform::mute/brightness";
 
@@ -45,6 +52,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Set thresholds based on the argument
+    bool failed = false;
     if (strcmp(argv[1], "micmute") == 0) {
         if (strcmp(argv[2], "get") == 0) {
             char* out;
@@ -53,9 +61,9 @@ int main(int argc, char *argv[]) {
             free(out);
             return 0;
         } else if (strcmp(argv[2], "on") == 0) {
-            if (set_led(micmute_path, "1") != 0) return 1;
+            failed = set_led(micmute_path, "1") != 0;
         } else if (strcmp(argv[2], "off") == 0) {
-            if (set_led(micmute_path, "0") != 0) return 1;
+            failed = set_led(micmute_path, "0") != 0;
         } else {
             fprintf(stderr, "Invalid argument: %s\n", argv[2]);
             fprintf(stderr, "Usage: %s %s <on|off|get>\n", argv[0], argv[1]);
@@ -65,13 +73,13 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[2], "get") == 0) {
             char* out;
             if (get_led(micmute_path, &out) != 0) return 1;
-            printf("Current value of micmute is: %s", out);
+            printf("%s", out);
             free(out);
             return 0;
         } else if (strcmp(argv[2], "on") == 0) {
-            if (set_led(mute_path, "1") != 0) return 1;
+            failed = set_led(mute_path, "1") != 0;
         } else if (strcmp(argv[2], "off") == 0) {
-            if (set_led(mute_path, "0") != 0) return 1;
+            failed = set_led(mute_path, "0") != 0;
         } else {
             fprintf(stderr, "Invalid argument: %s\n", argv[2]);
             fprintf(stderr, "Usage: %s %s <on|off|get>\n", argv[0], argv[1]);
@@ -82,6 +90,12 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Usage: %s <micmute|mute> <on|off|get>\n", argv[0]);
         return 1;
     }
+
+    if (failed) {
+        fprintf(stderr, "Failed to set leds.\n");
+        return 1;
+    }
+
     printf("%s leds successfully set to %s.\n", argv[1], argv[2]);
     return 0;
 }

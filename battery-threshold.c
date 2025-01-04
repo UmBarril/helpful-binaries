@@ -1,6 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
+
+/* == BATTERY THRESHOLD == */
+/* Program to limit the battery charge on a Lenovo Thinkpad T480 */
+/* Should work on ther models too, but I didn't test it */
+
+// Paths to the battery threshold files
+// TODO: support multiple batteries
+const char *start_threshold_path = "/sys/class/power_supply/BAT0/charge_start_threshold";
+const char *stop_threshold_path = "/sys/class/power_supply/BAT0/charge_stop_threshold";
 
 int set_threshold(const char *path, const char *value) {
     FILE *fp = fopen(path, "w");
@@ -34,8 +44,6 @@ int read_file(const char *path, char** out) {
 }
 
 int main(int argc, char *argv[]) {
-    const char *start_threshold_path = "/sys/class/power_supply/BAT0/charge_start_threshold";
-    const char *stop_threshold_path = "/sys/class/power_supply/BAT0/charge_stop_threshold";
 
     // Check for correct usage
     if (argc != 2) {
@@ -44,6 +52,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Set thresholds based on the argument
+    bool failed = false;
     if (strcmp(argv[1], "get") == 0) {
         char* start;
         char* end;
@@ -54,16 +63,25 @@ int main(int argc, char *argv[]) {
 
         free(start);
         free(end);
+
         return 0;
     } else if (strcmp(argv[1], "custom") == 0) {
-        if (set_threshold(start_threshold_path, "75") != 0) return 1;
-        if (set_threshold(stop_threshold_path, "80") != 0) return 1;
-    } else if (strcmp(argv[1], "normal") == 0) {
-        if (set_threshold(start_threshold_path, "96") != 0) return 1;
-        if (set_threshold(stop_threshold_path, "100") != 0) return 1;
+        // Set the thresholds so the battery charges up to 80%
+        failed = set_threshold(start_threshold_path, "75") != 0;
+        failed = set_threshold(stop_threshold_path, "80") != 0;
+    } else if (strcmp(argv[1], "normal") == 0) { 
+        // Set the thresholds so the battery charges up to 100%
+        failed = set_threshold(start_threshold_path, "96") != 0;
+        failed = set_threshold(stop_threshold_path, "100") != 0;
     } else {
         fprintf(stderr, "Invalid argument: %s\n", argv[1]);
         fprintf(stderr, "Usage: %s <custom|normal>\n", argv[0]);
+        return 1;
+    }
+
+    // if failed to write to the file
+    if (failed) {
+        fprintf(stderr, "Failed to set thresholds.\n");
         return 1;
     }
 
