@@ -22,6 +22,8 @@ Someday I will rewrite them in Zig or Rust maybe, but for now, C is enough.
 To compile any of the binaries, you just need to run the following command:
 
 ```bash
-make <binary>
+make <program name>
 ```
+
+Do not forget to have `gcc` and `make` installed.
 
